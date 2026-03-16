@@ -74,6 +74,15 @@ class OrganizationUUIDFilter(filters.UUIDFilter):
         return queryset.filter(facility_organization_cache__overlap=[organization.id])
 
 
+class CareTeamUserFilter(filters.CharFilter):
+    def filter(self, qs, value):
+        queryset = qs
+        if not value:
+            return queryset
+        user = get_object_or_404(User.objects.only("id"), username=value)
+        return queryset.filter(care_team_users__overlap=[user.id])
+
+
 class EncounterFilters(filters.FilterSet):
     facility = filters.UUIDFilter(field_name="facility__external_id")
     status = MultiSelectFilter(field_name="status")
@@ -93,6 +102,7 @@ class EncounterFilters(filters.FilterSet):
     created_date = filters.DateTimeFromToRangeFilter(field_name="created_date")
     live = LiveFilter()
     organization = OrganizationUUIDFilter()
+    care_team_user = CareTeamUserFilter()
 
 
 class EncounterViewSet(
@@ -407,5 +417,5 @@ class EncounterViewSet(
             )
 
         encounter.care_team = members
-        encounter.save(update_fields=["care_team"])
+        encounter.save(update_fields=["care_team", "care_team_users"])
         return Response({}, status=status.HTTP_200_OK)
